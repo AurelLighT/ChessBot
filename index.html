@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess vs AI (ELO ~1500)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="main-container">
+        <!-- Left Side: Game -->
+        <div class="game-area">
+            <h1>You (White) vs AI (Black)</h1>
+            <div class="turn-indicator" id="turnIndicator">Your Turn</div>
+            
+            <div class="controls-top">
+                <div class="control-row">
+                    <label for="difficulty">Level:</label>
+                    <select id="difficulty">
+                        <option value="1">Depth 1 (Easy)</option>
+                        <option value="3" selected>Depth 3 (Medium)</option>
+                        <option value="5">Depth 5 (Hard)</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <label>Play as:</label>
+                    <button id="playWhite" class="color-btn active">White</button>
+                    <button id="playBlack" class="color-btn">Black</button>
+                </div>
+            </div>
+            
+            <div class="board-wrapper">
+                <div class="ranks">
+                    <div>8</div><div>7</div><div>6</div><div>5</div><div>4</div><div>3</div><div>2</div><div>1</div>
+                </div>
+                <div class="chess-board" id="board"></div>
+                <div class="corner"></div>
+                <div class="files">
+                    <div>a</div><div>b</div><div>c</div><div>d</div><div>e</div><div>f</div><div>g</div><div>h</div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="undoBtn">Undo</button>
+                <button id="resetBtn">Reset Game</button>
+            </div>
+            <div id="statusMessage" class="status-message"></div>
+        </div>
+
+        <!-- Right Side: Move History & AI Stats -->
+        <div class="history-panel">
+            <h3>Stats</h3>
+            <div class="ai-stats" id="aiStats">
+                <div>Depth: <span id="depthStat">0</span></div>
+                <div>Evaluated: <span id="nodesStat">0</span> pos</div>
+                <div>Time: <span id="timeStat">0</span> ms</div>
+            </div>
+            <h3>Move History</h3>
+            <div class="move-list" id="moveList"></div>
+            
+            <h3>PGN I/O</h3>
+            <div class="pgn-controls">
+                <textarea id="pgnInput" placeholder="Paste PGN here or Export"></textarea>
+                <div class="pgn-buttons">
+                    <button class="pgn-btn" id="exportBtn">Export PGN</button>
+                    <button class="pgn-btn" id="importBtn">Import PGN</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Promotion Modal -->
+        <div id="promotionModal" class="modal">
+            <div class="modal-content">
+                <h3>Choose Promotion</h3>
+                <div class="promo-options" id="promoOptions"></div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
