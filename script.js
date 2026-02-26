@@ -185,6 +185,8 @@ function undoMove() {
 // --- PGN LOGIC ---
 function exportPGN() {
     let pgn = "";
+    // Kita gunakan array sementara untuk menyimpan notasi agar tidak terjadi duplikasi 
+    // jika fungsi ini dipanggil berkali-kali secara tidak sengaja
     for (let i = 0; i < moveLog.length; i += 2) {
         pgn += `${(i/2)+1}. ${moveLog[i]} `;
         if (moveLog[i+1]) pgn += `${moveLog[i+1]} `;
@@ -193,14 +195,22 @@ function exportPGN() {
 }
 
 function importPGN() {
-    const pgn = pgnInput.value.trim();
+    let pgn = pgnInput.value.trim();
     if (!pgn) return;
     
-    const cleanPGN = pgn.replace(/\d+\./g, '').replace(/\s+/g, ' ').trim();
-    const moves = cleanPGN.split(' ');
+    // 1. Sanitasi PGN: Hapus metadata [...] dan komentar {...}
+    pgn = pgn.replace(/\{.*?\}/g, '');
+    pgn = pgn.replace(/\[.*?\]/g, '');
     
+    // 2. Bersihkan nomor langkah (1. e4 -> e4) dan pecah jadi array
+    const cleanPGN = pgn.replace(/\d+\.\s*/g, ' ').replace(/\s+/g, ' ').trim();
+    const moves = cleanPGN.split(' ').filter(m => m.length > 0);
+    
+    if (moves.length === 0) return;
+
+    // 3. Reset game ke awal
     initBoard(); 
-    gameActive = false;
+    gameActive = false; // Nonaktifkan AI selama proses import
 
     let moveIdx = 0;
     const processNextMove = () => {
@@ -209,25 +219,36 @@ function importPGN() {
             renderBoard();
             renderMoveList();
             updateStatus();
-            if (currentTurn !== playerColor) makeAIMove();
+            // Cek skakmat/draw sebelum AI jalan
+            if (!isGameOver() && currentTurn !== playerColor) {
+                setTimeout(makeAIMove, 500); 
+            }
             return;
         }
 
         const moveStr = moves[moveIdx];
-        if (!moveStr) { moveIdx++; processNextMove(); return; } 
-
         const move = parseMove(moveStr, currentTurn);
+        
         if (move) {
+            // Kita eksekusi gerakan. isImporting = true agar tidak memicu makeAIMove di tengah jalan
             executeMove(move.fromR, move.fromC, move.toR, move.toC, move.promotion, true); 
+            moveIdx++;
+            // Berikan delay kecil agar user bisa melihat proses loading (lebih stabil)
+            setTimeout(processNextMove, 60); 
         } else {
-            alert(`Invalid move in PGN: ${moveStr}`);
+            console.error(`PGN Error: Gagal membaca langkah '${moveStr}' pada giliran ${currentTurn}`);
+            alert(`Gagal memuat PGN! Langkah tidak valid atau ambigu: ${moveStr}`);
             initBoard(); 
-            return;
+            gameActive = true;
+            renderBoard();
         }
-        moveIdx++;
-        setTimeout(processNextMove, 10); 
     };
-    setTimeout(processNextMove, 100);
+    processNextMove();
+}
+
+function isGameOver() {
+    const moves = getAllValidMoves(currentTurn);
+    return moves.length === 0;
 }
 
 function parseMove(san, color) {
@@ -240,7 +261,8 @@ function parseMove(san, color) {
         return { fromR: r, fromC: 4, toR: r, toC: 2 };
     }
 
-    san = san.replace(/[+#]/g, '');
+    // Bersihkan karakter dekorasi PGN
+    san = san.replace(/[+#x]/g, '');
 
     let promotion = null;
     if (san.includes('=')) {
@@ -267,24 +289,33 @@ function parseMove(san, color) {
         for (let c = 0; c < 8; c++) {
             const p = board[r][c];
             if (p && p[0] === color[0] && p[1] === pieceType) {
-                candidates.push({ r, c });
+                // VERIFIKASI: Bidak ini harus bisa jalan ke tujuan secara legal
+                if (isValidMove(r, c, toR, toC)) {
+                    candidates.push({ r, c });
+                }
             }
         }
     }
 
     let finalFrom = null;
-    for (const cand of candidates) {
+    if (candidates.length === 1) {
+        finalFrom = candidates[0];
+    } else if (candidates.length > 1) {
         if (disambiguation) {
-            const file = String.fromCharCode(97 + cand.c);
-            const rank = (8 - cand.r).toString();
-            if (disambiguation.includes(file) || disambiguation.includes(rank)) {
-                finalFrom = cand; break;
+            for (const cand of candidates) {
+                const file = String.fromCharCode(97 + cand.c);
+                const rank = (8 - cand.r).toString();
+                if (disambiguation.includes(file) || disambiguation.includes(rank)) {
+                    finalFrom = cand;
+                    break;
+                }
             }
         } else {
-            finalFrom = cand; break; 
+            // Jika masih ambigu dan tidak ada disambiguasi di PGN, 
+            // kita tetap ambil yang pertama tapi setidaknya sekarang sudah terfilter yang 'isValidMove'
+            finalFrom = candidates[0];
         }
     }
-    if (candidates.length > 1 && !disambiguation) finalFrom = candidates[0]; 
     if (finalFrom) return { fromR: finalFrom.r, fromC: finalFrom.c, toR, toC, promotion };
     return null;
 }
