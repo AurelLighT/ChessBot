@@ -3,20 +3,24 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
     background-color: #2c3e50;
     color: white;
     margin: 0;
+    padding: 10px;
+    box-sizing: border-box;
 }
 
 .main-container {
     display: flex;
+    flex-direction: row;
     gap: 30px; 
     background: #34495e;
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0 5px 20px rgba(0,0,0,0.4);
     position: relative;
+    max-width: 100%;
 }
 
 .game-area {
@@ -24,6 +28,7 @@ body {
     flex-direction: column;
     align-items: center;
     position: relative;
+    flex-shrink: 0;
 }
 
 /* --- BOARD LAYOUT --- */
@@ -40,7 +45,7 @@ body {
 .ranks, .files, .corner { background: #34495e; }
 .ranks {
     display: grid;
-    grid-template-rows: repeat(8, 60px);
+    grid-template-rows: repeat(8, 1fr);
     justify-items: center;
     align-items: center;
     font-weight: bold;
@@ -48,7 +53,7 @@ body {
 }
 .files {
     display: grid;
-    grid-template-columns: repeat(8, 60px);
+    grid-template-columns: repeat(8, 1fr);
     justify-items: center;
     align-items: center;
     font-weight: bold;
@@ -61,6 +66,46 @@ body {
     grid-template-rows: repeat(8, 60px);
     border: 2px solid #34495e;
 }
+
+/* Responsive Board Sizing */
+@media (max-width: 900px) {
+    body {
+        height: auto;
+        overflow-y: auto;
+    }
+    .main-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        padding: 10px;
+    }
+    .history-panel {
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+}
+
+@media (max-width: 600px) {
+    .chess-board {
+        grid-template-columns: repeat(8, 11vw);
+        grid-template-rows: repeat(8, 11vw);
+    }
+    .square {
+        width: 11vw !important;
+        height: 11vw !important;
+        font-size: 7vw !important;
+    }
+    .ranks {
+        grid-template-rows: repeat(8, 11vw);
+    }
+    .files {
+        grid-template-columns: repeat(8, 11vw);
+    }
+    h1 {
+        font-size: 1.2rem;
+    }
+}
+
 .square {
     width: 60px;
     height: 60px;
